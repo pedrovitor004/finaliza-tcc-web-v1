@@ -1,8 +1,30 @@
 import { BrowserRouter as Router, Navigate, Route, Routes } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import Layout from "./components/Layout";
 import { useAuth } from "./contexts/AuthContext";
+
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+
+import DashboardAluno from "./pages/aluno/DashboardAluno";
+import MeuTccPage from "./pages/aluno/MeutccPage";
+import SubmissoesPage from "./pages/aluno/SubmissoesPage";
+import BancaPageAluno from "./pages/aluno/BancaPage";
+import PerfilAlunoPage from "./pages/aluno/PerfilPage";
+import FeedbackPageAluno from "./pages/aluno/FeedbackPage";
+
+import DashboardProfessor from "./pages/professor/DashboardProfessor";
+import OrientandosPage from "./pages/professor/OrientandosPage";
+import AvaliacoesPage from "./pages/professor/AvaliacoesPage";
+import BancasPageProfessor from "./pages/professor/BancasPage";
+import PerfilProfessorPage from "./pages/professor/PerfilPage";
+
+import DashboardCoordenador from "./pages/coordenador/DashboardCoordenador";
+import AlunosPage from "./pages/coordenador/AlunosPage";
+import ProfessoresPage from "./pages/coordenador/ProfessoresPage";
+import TCCsPage from "./pages/coordenador/TCCsPage";
+import BancasPageCoord from "./pages/coordenador/BancasPage";
+import RelatoriosPage from "./pages/coordenador/RelatoriosPage";
+import AreasPage from "./pages/coordenador/AreasPage";
 
 function LoadingScreen() {
   return (
@@ -15,37 +37,13 @@ function LoadingScreen() {
   );
 }
 
-function AuthenticatedHome() {
-  const { logout, user } = useAuth();
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f6f8f5] px-5 text-slate-900">
-      <section className="w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wide text-[#2f8f2b]">
-          Finaliza TCC
-        </p>
-        <h1 className="mt-2 text-2xl font-bold text-slate-950">
-          Login realizado com sucesso
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Ola, {user?.nome || "usuario"}. As proximas telas do sistema podem ser
-          adicionadas nos proximos commits.
-        </p>
-        <button
-          type="button"
-          onClick={logout}
-          className="mt-6 inline-flex h-10 items-center gap-2 rounded-lg bg-[#2f8f2b] px-4 text-sm font-semibold text-white transition hover:bg-[#23731f]"
-        >
-          <LogOut size={17} />
-          Sair
-        </button>
-      </section>
-    </main>
-  );
+function HomeRedirect({ user }) {
+  const tipo = user?.tipo?.toLowerCase();
+  return <Navigate to={tipo ? `/${tipo}/dashboard` : "/login"} replace />;
 }
 
 function AppRoutes() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) return <LoadingScreen />;
 
@@ -60,10 +58,46 @@ function AppRoutes() {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<AuthenticatedHome />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<HomeRedirect user={user} />} />
+
+        {user?.tipo === "ALUNO" && (
+          <>
+            <Route path="/aluno/dashboard" element={<DashboardAluno />} />
+            <Route path="/aluno/meu-tcc" element={<MeuTccPage />} />
+            <Route path="/aluno/submissoes" element={<SubmissoesPage />} />
+            <Route path="/aluno/banca" element={<BancaPageAluno />} />
+            <Route path="/aluno/perfil" element={<PerfilAlunoPage />} />
+            <Route path="/aluno/feedbacks" element={<FeedbackPageAluno />} />
+          </>
+        )}
+
+        {user?.tipo === "PROFESSOR" && (
+          <>
+            <Route path="/professor/dashboard" element={<DashboardProfessor />} />
+            <Route path="/professor/orientandos" element={<OrientandosPage />} />
+            <Route path="/professor/avaliacoes" element={<AvaliacoesPage />} />
+            <Route path="/professor/bancas" element={<BancasPageProfessor />} />
+            <Route path="/professor/perfil" element={<PerfilProfessorPage />} />
+          </>
+        )}
+
+        {user?.tipo === "COORDENADOR" && (
+          <>
+            <Route path="/coordenador/dashboard" element={<DashboardCoordenador />} />
+            <Route path="/coordenador/alunos" element={<AlunosPage />} />
+            <Route path="/coordenador/professores" element={<ProfessoresPage />} />
+            <Route path="/coordenador/tccs" element={<TCCsPage />} />
+            <Route path="/coordenador/bancas" element={<BancasPageCoord />} />
+            <Route path="/coordenador/relatorios" element={<RelatoriosPage />} />
+            <Route path="/coordenador/areas" element={<AreasPage />} />
+          </>
+        )}
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Layout>
   );
 }
 
