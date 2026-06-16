@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAllTccs, ApiError } from "../../services/api";
-import { downloadCsv } from "../../lib/csv";
+//import { downloadCsv } from "../../lib/csv";
 
 function errMessage(e, fallback) {
   if (e instanceof ApiError) return e.message;

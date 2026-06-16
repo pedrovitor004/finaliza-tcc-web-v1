@@ -469,22 +469,7 @@ export default function AlunosPage() {
                 </span>
               </div>
               <div className="mt-3 flex flex-wrap gap-5 text-sm">
-                <button
-                  type="button"
-                  className="inline-flex items-center text-slate-500 transition hover:text-slate-900 disabled:text-slate-300"
-                  onClick={() => {
-                    if (!alunosFiltrados.length) {
-                      toast.error("Nao ha alunos para exportar.");
-                      return;
-                    }
-                    gridRef.current?.api?.exportDataAsCsv({
-                      fileName: "alunos-finaliza-tcc.csv",
-                    });
-                    toast.success("CSV exportado.");
-                  }}
-                >
-                  <FileText size={16} className="mr-1.5" /> Exportar CSV
-                </button>
+
                 <button
                   type="button"
                   className="inline-flex items-center text-slate-500 transition hover:text-slate-900"

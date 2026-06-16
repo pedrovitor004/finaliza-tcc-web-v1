@@ -26,6 +26,13 @@ import BancasPageCoord from "./pages/coordenador/BancasPage";
 import RelatoriosPage from "./pages/coordenador/RelatoriosPage";
 import AreasPage from "./pages/coordenador/AreasPage";
 
+import { ModuleRegistry } from 'ag-grid-community';
+import { AgGridProvider } from "ag-grid-react";
+import { AllCommunityModule } from "ag-grid-community";
+
+// Registra os módulos globalmente para o projeto inteiro
+ModuleRegistry.registerModules([ AllCommunityModule ]);
+
 function LoadingScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50">

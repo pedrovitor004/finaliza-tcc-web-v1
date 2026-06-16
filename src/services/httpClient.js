@@ -53,9 +53,6 @@ function extractErrorMessage(status, body) {
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 apiClient.interceptors.response.use(
@@ -99,17 +96,16 @@ export async function fetchClient(
   endpoint,
   { body, method = "GET", headers = {}, ...customConfig } = {}
 ) {
-  const requestHeaders = { ...headers };
-
-  if (body instanceof FormData) {
-    delete requestHeaders["Content-Type"];
-  }
+  const isFormData = body instanceof FormData;
 
   const response = await apiClient.request({
     url: endpoint,
     method,
     data: body,
-    headers: requestHeaders,
+    headers: {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...headers,
+    },
     ...customConfig,
   });
 

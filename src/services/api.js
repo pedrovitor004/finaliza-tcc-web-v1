@@ -118,10 +118,10 @@ export const uploadArquivoFile = (file, submissaoId, tipo = "MANUSCRITO") => {
   return fetchClient("/arquivos/upload", { method: "POST", body: formData });
 };
 export const getArquivoDownloadUrl = (id) =>
-  `${API_BASE_URL}/arquivos/download/${id}`;
+  `${API_BASE_URL}/arquivos/${id}/download`;
 export const downloadArquivo = async (id) => {
   const response = await apiClient.get(
-    `/arquivos/download/${id}`,
+    `/arquivos/${id}/download`,
     {
       responseType: "blob",
     }
@@ -132,18 +132,7 @@ export const downloadArquivo = async (id) => {
     filename: null,
   };
 };
-  return {
-    blob: response.data,
-    filename:
-      response.headers["content-disposition"]?.match(/filename\*=UTF-8''([^;]+)/)?.[1]
-        ? decodeURIComponent(
-            response.headers["content-disposition"].match(
-              /filename\*=UTF-8''([^;]+)/,
-            )[1],
-          )
-        : null,
-  };
-};
+
 export const deleteArquivo = (id) =>
   fetchClient(`/arquivos/${id}`, { method: "DELETE" });
 
