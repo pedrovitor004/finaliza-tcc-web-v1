@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import finalizaLogo from "../../assets/Group (1).png";
 import {
   ApiError,
   getAllAlunos,
@@ -90,6 +91,51 @@ function statusLabel(status) {
     default:
       return "Sem status";
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatDate(value) {
+  const date = parseDate(value);
+  return date ? date.toLocaleDateString("pt-BR") : "-";
+}
+
+function formatDateTime(value) {
+  const date = parseDate(value);
+  return date
+    ? date.toLocaleString("pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-";
+}
+
+function renderRows(rows, columns) {
+  if (!rows.length) {
+    return `<tr><td colspan="${columns.length}" class="empty">Sem dados para este relatorio.</td></tr>`;
+  }
+
+  return rows
+    .map(
+      (row) => `
+        <tr>
+          ${columns
+            .map((column) => `<td>${escapeHtml(column.value(row))}</td>`)
+            .join("")}
+        </tr>
+      `,
+    )
+    .join("");
 }
 
 export default function RelatoriosPage() {
@@ -243,6 +289,297 @@ export default function RelatoriosPage() {
     ];
   }, [tccs, bancas]);
 
+  function openPdfWindow(reportName) {
+    const tccByAlunoId = new Map();
+    for (const tcc of tccs) {
+      if (tcc?.alunoId && !tccByAlunoId.has(tcc.alunoId)) {
+        tccByAlunoId.set(tcc.alunoId, tcc);
+      }
+    }
+
+    const reports = {
+      "Lista de Alunos e Orientadores": {
+        title: "Lista de Alunos e Orientadores",
+        description:
+          "Relacao de alunos cadastrados, TCC atual e vinculo de orientacao.",
+        columns: [
+          { label: "Aluno", value: (row) => row.nome || "-" },
+          { label: "Matricula", value: (row) => row.matricula || "-" },
+          { label: "E-mail", value: (row) => row.email || "-" },
+          {
+            label: "TCC",
+            value: (row) => tccByAlunoId.get(row.id)?.titulo || "-",
+          },
+          {
+            label: "Orientador",
+            value: (row) => tccByAlunoId.get(row.id)?.orientadorNome || "-",
+          },
+          {
+            label: "Status",
+            value: (row) => statusLabel(tccByAlunoId.get(row.id)?.status),
+          },
+        ],
+        rows: alunos,
+      },
+      "Status de TCCs (snapshot)": {
+        title: "Status de TCCs",
+        description: "Snapshot dos TCCs cadastrados e seus status atuais.",
+        columns: [
+          { label: "Titulo", value: (row) => row.titulo || "-" },
+          { label: "Aluno", value: (row) => row.alunoNome || "-" },
+          { label: "Orientador", value: (row) => row.orientadorNome || "-" },
+          { label: "Area", value: (row) => row.areaNome || "-" },
+          { label: "Status", value: (row) => statusLabel(row.status) },
+          { label: "Inicio", value: (row) => formatDate(row.dataInicio) },
+          { label: "Fim", value: (row) => formatDate(row.dataFim) },
+        ],
+        rows: tccs,
+      },
+      "Cronograma de Bancas (snapshot)": {
+        title: "Cronograma de Bancas",
+        description: "Bancas cadastradas com data, local e nota final.",
+        columns: [
+          { label: "Data", value: (row) => formatDateTime(row.data) },
+          { label: "Local", value: (row) => row.local || "-" },
+          { label: "TCC", value: (row) => row.tccTitulo || row.titulo || "-" },
+          { label: "Aluno", value: (row) => row.alunoNome || "-" },
+          {
+            label: "Nota final",
+            value: (row) => (row.notaFinal == null ? "-" : row.notaFinal),
+          },
+        ],
+        rows: [...bancas].sort((a, b) => {
+          const dateA = parseDate(a.data)?.getTime() || 0;
+          const dateB = parseDate(b.data)?.getTime() || 0;
+          return dateA - dateB;
+        }),
+      },
+      "Relatorio de Notas (snapshot)": {
+        title: "Relatorio de Notas",
+        description: "Resumo de notas finais registradas nas bancas.",
+        columns: [
+          { label: "TCC", value: (row) => row.tccTitulo || row.titulo || "-" },
+          { label: "Aluno", value: (row) => row.alunoNome || "-" },
+          { label: "Data da banca", value: (row) => formatDate(row.data) },
+          {
+            label: "Nota final",
+            value: (row) => (row.notaFinal == null ? "-" : row.notaFinal),
+          },
+          {
+            label: "Situacao",
+            value: (row) =>
+              row.notaFinal == null
+                ? "Pendente"
+                : Number(row.notaFinal) >= 7
+                  ? "Aprovado"
+                  : "Reprovado",
+          },
+        ],
+        rows: bancas,
+      },
+    };
+
+    const report = reports[reportName];
+    if (!report) return;
+
+    const popup = window.open("", "_blank", "width=1100,height=800");
+    if (!popup) {
+      toast.error("Permita pop-ups no navegador para gerar o PDF.");
+      return;
+    }
+
+    const generatedAt = new Date().toLocaleString("pt-BR");
+    const logoSrc =
+      finalizaLogo.startsWith("data:") || finalizaLogo.startsWith("http")
+        ? finalizaLogo
+        : new URL(finalizaLogo, window.location.origin).href;
+
+    popup.document.write(`
+      <!doctype html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8" />
+          <title>${escapeHtml(report.title)} - Finaliza TCC</title>
+          <style>
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              background: #f1f5f9;
+              color: #0f172a;
+              font-family: Inter, Arial, sans-serif;
+            }
+            .page {
+              width: min(1120px, calc(100% - 32px));
+              margin: 24px auto;
+              background: #fff;
+              border: 1px solid #dbe3ea;
+              border-radius: 10px;
+              padding: 30px;
+            }
+            header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 24px;
+              border-bottom: 3px solid #359830;
+              padding-bottom: 18px;
+              margin-bottom: 22px;
+            }
+            .brand {
+              display: flex;
+              align-items: center;
+              gap: 14px;
+            }
+            .brand img {
+              width: 58px;
+              height: 58px;
+              object-fit: contain;
+            }
+            h1 {
+              margin: 0;
+              font-size: 24px;
+              line-height: 1.2;
+            }
+            .muted {
+              color: #64748b;
+              font-size: 12px;
+              margin-top: 4px;
+            }
+            .actions {
+              display: flex;
+              gap: 8px;
+            }
+            button {
+              border: 0;
+              border-radius: 6px;
+              background: #359830;
+              color: #fff;
+              cursor: pointer;
+              font-weight: 700;
+              padding: 10px 14px;
+            }
+            button.secondary {
+              background: #e2e8f0;
+              color: #334155;
+            }
+            .summary {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 12px;
+              margin-bottom: 22px;
+            }
+            .metric {
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 12px;
+            }
+            .metric strong {
+              display: block;
+              color: #359830;
+              font-size: 22px;
+              margin-top: 4px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 12px;
+            }
+            th {
+              background: #f8fafc;
+              color: #334155;
+              font-size: 11px;
+              letter-spacing: .03em;
+              text-align: left;
+              text-transform: uppercase;
+            }
+            th, td {
+              border: 1px solid #e2e8f0;
+              padding: 9px 10px;
+              vertical-align: top;
+            }
+            tr:nth-child(even) td {
+              background: #fbfdff;
+            }
+            .empty {
+              color: #64748b;
+              padding: 24px;
+              text-align: center;
+            }
+            footer {
+              border-top: 1px solid #e2e8f0;
+              color: #64748b;
+              font-size: 11px;
+              margin-top: 22px;
+              padding-top: 12px;
+            }
+            @media print {
+              body { background: #fff; }
+              .page {
+                width: 100%;
+                margin: 0;
+                border: 0;
+                border-radius: 0;
+                padding: 0;
+              }
+              .actions { display: none; }
+              header { break-after: avoid; }
+              table { page-break-inside: auto; }
+              tr { break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <main class="page">
+            <header>
+              <div class="brand">
+                <img src="${logoSrc}" alt="Finaliza TCC" />
+                <div>
+                  <h1>${escapeHtml(report.title)}</h1>
+                  <div class="muted">${escapeHtml(report.description)}</div>
+                  <div class="muted">Gerado em ${escapeHtml(generatedAt)}</div>
+                </div>
+              </div>
+              <div class="actions">
+                <button type="button" onclick="window.print()">Salvar PDF</button>
+                <button type="button" class="secondary" onclick="window.close()">Fechar</button>
+              </div>
+            </header>
+
+            <section class="summary">
+              <div class="metric">Alunos<strong>${alunos.length}</strong></div>
+              <div class="metric">TCCs<strong>${metrics.totalTccs}</strong></div>
+              <div class="metric">Bancas<strong>${bancas.length}</strong></div>
+              <div class="metric">Aprovacao<strong>${metrics.taxa}%</strong></div>
+            </section>
+
+            <table>
+              <thead>
+                <tr>
+                  ${report.columns
+                    .map((column) => `<th>${escapeHtml(column.label)}</th>`)
+                    .join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${renderRows(report.rows, report.columns)}
+              </tbody>
+            </table>
+
+            <footer>
+              Finaliza TCC - documento gerado pelo painel da coordenacao.
+            </footer>
+          </main>
+          <script>
+            window.addEventListener("load", () => {
+              setTimeout(() => window.print(), 350);
+            });
+          </script>
+        </body>
+      </html>
+    `);
+    popup.document.close();
+  }
+
   const areaOptions = useMemo(
     () =>
       baseChartOptions({
@@ -387,7 +724,9 @@ export default function RelatoriosPage() {
               <Chart
                 height={320}
                 options={areaOptions}
-                series={[{ data: porArea.map((item) => item.qtd), name: "TCCs" }]}
+                series={[
+                  { data: porArea.map((item) => item.qtd), name: "TCCs" },
+                ]}
                 type="bar"
               />
             ) : (
@@ -471,9 +810,7 @@ export default function RelatoriosPage() {
                 key={nome}
                 type="button"
                 className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-[#359830]/35 hover:bg-[#f8faf7]"
-                onClick={() =>
-                  toast(`Exportacao em desenvolvimento: ${nome}`, { icon: "i" })
-                }
+                onClick={() => openPdfWindow(nome)}
               >
                 <span className="flex items-center text-sm font-semibold text-slate-700">
                   <FileText size={17} className="mr-3 text-[#359830]" />

@@ -141,31 +141,10 @@ export default function TCCsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Projetos de TCC</h1>
           <p className="text-slate-500 mt-1">
-            Lista real vinda de `GET /api/tccs`.
+            Lista de todos os TCCs cadastrados, com status e progresso. Use a
+            busca e os filtros para encontrar rapidamente o que procura.
           </p>
         </div>
-        <button
-          type="button"
-          className="flex items-center px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors text-sm shadow-sm"
-          onClick={() => {
-            const ok = downloadCsv(
-              "tccs.csv",
-              rows.map((tcc) => ({
-                titulo: tcc.titulo,
-                aluno: tcc.aluno,
-                orientador: tcc.orientador,
-                fase: tcc.fase,
-                ultimaEntrega: tcc.ultimaEntrega,
-                status: tcc.status,
-              })),
-            );
-            if (ok) toast.success("Relatorio de TCCs exportado.");
-            else toast.error("Nao ha TCCs para exportar.");
-          }}
-        >
-          <Download size={18} className="mr-2 text-[#359830]" />
-          RelatÃ³rio de Temas
-        </button>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4">
@@ -176,7 +155,7 @@ export default function TCCsPage() {
           />
           <input
             type="text"
-            placeholder="Buscar por tÃ­tulo do trabalho ou nome do aluno..."
+            placeholder="Buscar por título do trabalho ou nome do aluno..."
             className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#359830] outline-none transition-all text-sm"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
@@ -216,9 +195,8 @@ export default function TCCsPage() {
                   >
                     {tcc.status}
                   </span>
-                  <span className="text-slate-300 text-xs">â€¢</span>
                   <span className="text-xs font-medium text-slate-500 flex items-center">
-                    <Clock size={12} className="mr-1" /> Ãšltima data:{" "}
+                    <Clock size={12} className="mr-1" /> Última data:{" "}
                     {tcc.ultimaEntrega}
                   </span>
                 </div>
@@ -352,5 +330,3 @@ export default function TCCsPage() {
     </div>
   );
 }
-
-

@@ -19,6 +19,7 @@ import {
   getAllBancas,
   ApiError,
 } from "../../services/api";
+import { useNavigate } from "react-router-dom";
 
 function errMessage(e, fallback) {
   if (e instanceof ApiError) return e.message;
@@ -73,6 +74,7 @@ export default function DashboardCoordenador() {
   const [professores, setProfessores] = useState([]);
   const [tccs, setTccs] = useState([]);
   const [bancas, setBancas] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let alive = true;
@@ -222,6 +224,7 @@ export default function DashboardCoordenador() {
         descricao: `Há ${bancasSemAvaliadores} banca(s) sem nota final registrada (pode indicar pendências).`,
         criticidade: "media",
         acao: "Gerenciar Bancas",
+        onClick: () => navigate("/coordenador/bancas"),
       });
     }
 
@@ -236,16 +239,16 @@ export default function DashboardCoordenador() {
     }
 
     return alertas;
-  }, [alunos, tccs, bancas]);
+  }, [alunos, tccs, bancas, navigate]);
 
   const atividadesRecentes = useMemo(() => {
     // “Atividade recente” derivada dos TCCs (melhor que mock)
     const items = tccs
       .map((t) => ({
         id: t.id,
-        usuario: t.orientadorNome || "Orientador",
+        usuario: `${t.titulo || "Sem título"} (${t.alunoNome || "Aluno"})`,
         acao: "Status do TCC:",
-        alvo: `${t.titulo || "Sem título"} (${t.alunoNome || "Aluno"})`,
+        alvo: t.orientadorNome || "Orientador",
         tempo: statusLabel(t.status),
       }))
       .slice(0, 6);
@@ -269,15 +272,14 @@ export default function DashboardCoordenador() {
             Painel da Coordenação
           </h1>
           <p className="text-slate-500 mt-1">
-            Visão geral com base nos dados reais carregados da API.
+            Visão geral do andamento dos TCCs, atividades recentes e alertas
+            administrativos.
           </p>
         </div>
         <button
           type="button"
           className="px-4 py-2 bg-[#359830] text-white font-medium rounded-lg hover:bg-[#2a7725] transition-colors text-sm shadow-sm flex items-center"
-          onClick={() =>
-            toast("Abra a tela de Relatórios para exportações.", { icon: "ℹ️" })
-          }
+          onClick={() => navigate("/coordenador/relatorios")}
         >
           <FileText size={18} className="mr-2" />
           Gerar Relatórios
@@ -357,14 +359,7 @@ export default function DashboardCoordenador() {
                   <button
                     type="button"
                     className="shrink-0 w-full sm:w-auto px-4 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 transition-colors text-sm shadow-sm flex items-center justify-center"
-                    onClick={() =>
-                      toast(
-                        "Use o menu lateral para ir à área correspondente.",
-                        {
-                          icon: "ℹ️",
-                        },
-                      )
-                    }
+                    onClick={() => navigate("/coordenador/alunos")}
                   >
                     {alerta.acao} <ChevronRight size={16} className="ml-1" />
                   </button>
@@ -441,8 +436,8 @@ export default function DashboardCoordenador() {
                             {atividade.tempo}
                           </span>
                           <br />
-                          <span className="text-slate-600">
-                            {atividade.alvo}
+                          <span className="text-slate-800">
+                            {atividade.alvo} (Orientador)
                           </span>
                         </p>
                       </div>

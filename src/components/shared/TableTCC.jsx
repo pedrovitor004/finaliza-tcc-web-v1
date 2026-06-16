@@ -1,5 +1,6 @@
 import React from "react";
-import { FileSearch } from "lucide-react";
+import { ClipboardList, Eye, FileSearch } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function TableTCCs({
   dados = [],
@@ -24,6 +25,53 @@ export default function TableTCCs({
       >
         {status}
       </span>
+    );
+  };
+
+  const showTccDetails = (tcc) => {
+    toast.custom(
+      (toastItem) => (
+        <div
+          className={`flex w-[360px] max-w-[calc(100vw-32px)] gap-3 rounded-lg border border-[#b8dfb5] bg-white p-4 text-left shadow-xl transition ${
+            toastItem.visible
+              ? "translate-y-0 opacity-100"
+              : "translate-y-2 opacity-0"
+          }`}
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#359830]/10 text-[#359830]">
+            <ClipboardList size={21} />
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-slate-900">
+              Detalhes do TCC
+            </p>
+            <div className="mt-2 space-y-1 text-sm text-slate-600">
+              <p>
+                <span className="font-semibold text-slate-800">Aluno:</span>{" "}
+                {tcc.aluno || "-"}
+              </p>
+              {tcc.matricula && (
+                <p>
+                  <span className="font-semibold text-slate-800">
+                    Matricula:
+                  </span>{" "}
+                  {tcc.matricula}
+                </p>
+              )}
+              <p>
+                <span className="font-semibold text-slate-800">Tema:</span>{" "}
+                {tcc.tema || "-"}
+              </p>
+              <p>
+                <span className="font-semibold text-slate-800">Status:</span>{" "}
+                {tcc.status || "-"}
+              </p>
+            </div>
+          </div>
+        </div>
+      ),
+      { duration: 5200 },
     );
   };
 
@@ -70,9 +118,12 @@ export default function TableTCCs({
                   <td className="px-6 py-4">{getStatusBadge(tcc.status)}</td>
                   <td className="px-6 py-4 text-right">
                     <button
-                      className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-all hover:brightness-75"
+                      className="inline-flex items-center justify-end gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-semibold opacity-0 transition-all hover:bg-[#359830]/10 hover:brightness-95 group-hover:opacity-100"
                       style={{ color: brandGreen }}
+                      onClick={() => showTccDetails(tcc)}
+                      title={`Ver detalhes do TCC de ${tcc.aluno || "aluno"}`}
                     >
+                      <Eye size={16} />
                       Detalhes
                     </button>
                   </td>

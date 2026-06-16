@@ -122,17 +122,6 @@ export default function ProfessoresPage() {
             é orientador.
           </p>
         </div>
-        <button
-          type="button"
-          className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-[#359830] text-white font-medium rounded-lg hover:bg-[#2a7725] transition-colors text-sm shadow-sm"
-          onClick={() =>
-            toast("Cadastro público de professor já existe em /register.", {
-              icon: "ℹ️",
-            })
-          }
-        >
-          <UserPlus size={18} className="mr-2" /> Novo Professor
-        </button>
       </div>
 
       <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 items-center">
@@ -212,12 +201,6 @@ export default function ProfessoresPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-50 transition-colors"
-                  >
-                    <MoreVertical size={18} />
-                  </button>
                 </div>
 
                 <div className="p-5 flex-1 flex flex-col">
@@ -293,18 +276,6 @@ export default function ProfessoresPage() {
                     }}
                   >
                     <Mail size={14} className="mr-1.5 text-slate-400" /> Contato
-                  </button>
-                  <button
-                    type="button"
-                    className="flex-1 flex items-center justify-center px-3 py-2 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-100 transition-colors text-xs shadow-sm"
-                    onClick={() =>
-                      toast("Ajuste de vagas precisa de campo no backend.", {
-                        icon: "ℹ️",
-                      })
-                    }
-                  >
-                    <Settings size={14} className="mr-1.5 text-slate-400" />{" "}
-                    Ajustar Vagas
                   </button>
                 </div>
               </div>
