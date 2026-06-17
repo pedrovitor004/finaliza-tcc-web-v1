@@ -396,20 +396,6 @@ export default function AlunosPage() {
               >
                 <Mail size={16} />
               </button>
-
-              <button
-                type="button"
-                title="Opcoes"
-                className="rounded p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                onClick={() =>
-                  toast(
-                    "Acoes extras: editar aluno, reset senha, etc. (proximo passo).",
-                    { icon: "i" },
-                  )
-                }
-              >
-                <MoreVertical size={16} />
-              </button>
             </div>
           );
         },

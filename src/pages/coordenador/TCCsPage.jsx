@@ -9,8 +9,13 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { getAllTccs, ApiError } from "../../services/api";
-//import { downloadCsv } from "../../lib/csv";
+import {
+    getAllTccs,
+    getSubmissoesByTcc,
+    getArquivosBySubmissao,
+    getArquivoDownloadUrl,
+    ApiError,
+} from "../../services/api";
 
 function errMessage(e, fallback) {
   if (e instanceof ApiError) return e.message;
@@ -81,6 +86,48 @@ export default function TCCsPage() {
       alive = false;
     };
   }, []);
+
+  const acessarTcc = async (tcc) => {
+    try {
+      const submissoes = await getSubmissoesByTcc(tcc.id);
+
+      if (!submissoes?.length) {
+        toast.error(
+          "Este aluno ainda não submeteu nenhuma versão do TCC."
+        );
+        return;
+      }
+
+      const ultimaSubmissao = [...submissoes].sort(
+        (a, b) => b.versao - a.versao
+      )[0];
+
+      const arquivos = await getArquivosBySubmissao(
+        ultimaSubmissao.id
+      );
+
+      if (!arquivos?.length) {
+        toast.error(
+          "Nenhum arquivo foi encontrado para a última submissão."
+        );
+        return;
+      }
+
+      const arquivoMaisRecente = arquivos[0];
+
+      window.open(
+        getArquivoDownloadUrl(arquivoMaisRecente.id),
+        "_blank"
+      );
+    } catch (e) {
+      toast.error(
+        errMessage(
+          e,
+          "Não foi possível acessar o TCC."
+        )
+      );
+    }
+  };
 
   const rows = useMemo(() => {
     return tccs.map((t) => {
@@ -250,7 +297,7 @@ export default function TCCsPage() {
                   <button
                     type="button"
                     className="flex-1 bg-[#359830]/10 hover:bg-[#359830]/10 text-[#359830] text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center"
-                    onClick={() => setTccDetalhe(tcc)}
+                    onClick={() => acessarTcc(tcc.raw)}
                   >
                     <ExternalLink size={14} className="mr-1.5" /> ACESSAR TCC
                   </button>

@@ -668,7 +668,7 @@ export default function RelatoriosPage() {
           Relatorios e Indicadores
         </h1>
         <p className="mt-1 text-slate-500">
-          Graficos calculados a partir das listagens atuais da API.
+          Gere relatórios e acompanhe o desempenho de estudantes, orientandores e tccs.
         </p>
       </div>
 
