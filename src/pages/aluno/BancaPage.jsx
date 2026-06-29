@@ -35,12 +35,15 @@ export default function BancaPage() {
         const tccs = await getTccsByAluno(usuarioId);
 
         if (tccs && tccs.length > 0) {
-          // 2. Busca a banca do primeiro TCC encontrado (fluxo padrão)
-          // Se o seu backend retornar 404 quando não há banca, o catch tratará
+            // 2. Busca a banca do primeiro TCC encontrado (fluxo padrão)
           const b = await getBancaByTcc(tccs[0].id);
-          setBanca(b);
+
+          if (!b) {
+            setBanca(null);
+          } else {
+            setBanca(b);
+          }
         } else {
-          // Aluno não tem TCC cadastrado, logo não tem banca
           setBanca(null);
         }
       } catch (e) {
