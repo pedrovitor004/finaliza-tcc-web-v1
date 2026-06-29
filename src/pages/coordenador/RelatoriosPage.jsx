@@ -837,7 +837,6 @@ export default function RelatoriosPage() {
                 <th className="px-6 py-3 text-center">Universo</th>
                 <th className="px-6 py-3 text-center">OK</th>
                 <th className="px-6 py-3 text-center">Atencao</th>
-                <th className="px-6 py-3 text-right">Acao</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -859,17 +858,7 @@ export default function RelatoriosPage() {
                     {row.alert}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button
-                      type="button"
-                      className="text-xs font-bold uppercase text-[#2f8f2b] hover:underline"
-                      onClick={() =>
-                        toast("Proximo passo: gerar notificacoes no backend.", {
-                          icon: "i",
-                        })
-                      }
-                    >
-                      Notificar todos
-                    </button>
+
                   </td>
                 </tr>
               ))}

@@ -456,18 +456,6 @@ export default function AlunosPage() {
               </div>
               <div className="mt-3 flex flex-wrap gap-5 text-sm">
 
-                <button
-                  type="button"
-                  className="inline-flex items-center text-slate-500 transition hover:text-slate-900"
-                  onClick={() =>
-                    toast(
-                      "Fluxo de criacao administrativa: use o cadastro publico ou crie endpoint dedicado.",
-                      { icon: "i" },
-                    )
-                  }
-                >
-                  <UserPlus size={16} className="mr-1.5" /> Novo Aluno
-                </button>
               </div>
             </div>
 

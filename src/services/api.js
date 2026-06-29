@@ -117,6 +117,10 @@ export const uploadArquivoFile = (file, submissaoId, tipo = "MANUSCRITO") => {
 
   return fetchClient("/arquivos/upload", { method: "POST", body: formData });
 };
+
+export const getArquivoVisualizarUrl = (id) =>
+  `${API_BASE_URL}/arquivos/${id}/visualizar`;
+
 export const getArquivoDownloadUrl = (id) =>
   `${API_BASE_URL}/arquivos/${id}/download`;
 export const downloadArquivo = async (id) => {

@@ -15,6 +15,9 @@ import {
   getTccsByProfessor,
   getUsuario,
   updateSubmissao,
+  getArquivosBySubmissao,
+  getArquivoDownloadUrl,
+  getArquivoVisualizarUrl,
 } from "../../services/api.js";
 
 const STATUS_PENDENTE = ["ENVIADO", "EM_ANALISE"];
@@ -41,6 +44,8 @@ export default function AvaliacoesPage() {
   const [parecer, setParecer] = useState("");
   const [comentario, setComentario] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [arquivos, setArquivos] = useState([]);
+  const [nota, setNota] = useState("");
 
   const carregarSubmissoes = useCallback(() => {
     if (!usuario?.id) {
@@ -97,14 +102,23 @@ export default function AvaliacoesPage() {
     STATUS_PENDENTE.includes(submissao.status),
   ).length;
 
-  const abrirModal = (submissao) => {
+const abrirModal = async (submissao) => {
     setSubmissaoSelecionada(submissao);
     setParecer("");
     setComentario("");
-  };
+    setNota("");
+
+  try {
+    const lista = await getArquivosBySubmissao(submissao.id);
+    setArquivos(lista || []);
+  } catch {
+    setArquivos([]);
+  }
+};
 
   const fecharModal = () => {
     setSubmissaoSelecionada(null);
+    setArquivos([]);
   };
 
   const enviarParecer = async (e) => {
@@ -119,6 +133,7 @@ export default function AvaliacoesPage() {
     try {
       await createFeedback({
         comentario,
+        nota: nota === "" ? null : Number(nota),
         data: new Date().toISOString(),
         submissaoId: submissaoSelecionada.id,
         professorId: usuario.id,
@@ -321,6 +336,55 @@ export default function AvaliacoesPage() {
                 </p>
               </div>
 
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-slate-700 mb-3">
+                  Arquivo enviado pelo aluno
+                </label>
+
+                {arquivos.length === 0 ? (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-500">
+                    Nenhum arquivo encontrado para esta submissão.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {arquivos.map((arquivo) => (
+                      <div
+                        key={arquivo.id}
+                        className="flex items-center justify-between border rounded-lg p-3"
+                      >
+                        <div>
+                          <p className="font-medium text-slate-700">
+                            {arquivo.nomeArquivo}
+                          </p>
+
+                          <p className="text-xs text-slate-500">
+                            {(arquivo.tamanho / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <a
+                            href={getArquivoVisualizarUrl(arquivo.id)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+                          >
+                            Visualizar
+                          </a>
+
+                          <a
+                            href={getArquivoDownloadUrl(arquivo.id)}
+                            className="px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm"
+                          >
+                            Download
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <form id="formParecer" onSubmit={enviarParecer} className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
@@ -354,6 +418,23 @@ export default function AvaliacoesPage() {
                       </span>
                     </label>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Nota da versão
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    value={nota}
+                    onChange={(e) => setNota(e.target.value)}
+                    placeholder="Ex.: 8.5"
+                    className="block w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#359830] focus:border-[#359830] outline-none"
+                  />
                 </div>
 
                 <div>
