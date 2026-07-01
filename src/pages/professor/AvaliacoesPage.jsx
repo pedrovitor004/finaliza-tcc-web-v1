@@ -367,14 +367,14 @@ const abrirModal = async (submissao) => {
                             href={getArquivoVisualizarUrl(arquivo.id)}
                             target="_blank"
                             rel="noreferrer"
-                            className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm"
+                            className="rounded-lg bg-[#359830] px-3 py-2 text-sm !text-white transition-colors hover:bg-[#2a7725]"
                           >
                             Visualizar
                           </a>
 
                           <a
                             href={getArquivoDownloadUrl(arquivo.id)}
-                            className="px-3 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm"
+                            className="rounded-lg border border-[#359830] bg-white px-3 py-2 text-sm font-medium text-[#2a7725] transition-colors hover:bg-green-50"
                           >
                             Download
                           </a>

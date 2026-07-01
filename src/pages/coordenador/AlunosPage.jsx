@@ -600,7 +600,8 @@ export default function AlunosPage() {
                 ))}
               </select>
               <div className="mt-2 text-xs text-slate-500">
-                Observacao: o vinculo e feito no TCC via PUT /api/tccs/:id.
+                Ao salvar, os professores selecionados serão vinculados ao TCC
+                do aluno.
               </div>
             </div>
           </div>

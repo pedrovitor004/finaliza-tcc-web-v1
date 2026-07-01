@@ -312,10 +312,10 @@ export default function SubmissoesPage() {
                       type="button"
                       onClick={() => baixarArquivo(arquivoPrincipal)}
                       disabled={!arquivoPrincipal?.id}
-                      className={`flex items-center px-4 py-2 text-xs font-bold bg-white border border-slate-200 rounded-lg transition-all shadow-sm ${
+                      className={`flex items-center rounded-lg border px-4 py-2 text-xs font-bold shadow-sm transition-all ${
                         arquivoPrincipal?.id
-                          ? "text-slate-600 hover:bg-slate-50 hover:border-slate-300"
-                          : "cursor-not-allowed text-slate-300 opacity-60"
+                          ? "border-[#359830] bg-[#359830] text-white hover:border-[#2a7725] hover:bg-[#2a7725]"
+                          : "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-60"
                       }`}
                     >
                       <Download size={14} className="mr-2" />

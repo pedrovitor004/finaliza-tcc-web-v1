@@ -268,13 +268,13 @@ export default function RelatoriosPage() {
     return [
       {
         alert: semOrientador,
-        doc: "TCCs com orientador associado",
+        doc: "Orientação dos TCCs",
         ok: comOrientador,
         total: tccs.length,
       },
       {
         alert: tccs.filter((tcc) => tcc.status === "REPROVADO").length,
-        doc: "TCCs em banca / aprovados",
+        doc: "Andamento dos TCCs",
         ok: tccs.filter(
           (tcc) => tcc.status === "EM_BANCA" || tcc.status === "APROVADO",
         ).length,
@@ -282,7 +282,7 @@ export default function RelatoriosPage() {
       },
       {
         alert: bancas.filter((banca) => banca.notaFinal == null).length,
-        doc: "Bancas cadastradas",
+        doc: "Notas finais das bancas",
         ok: bancas.filter((banca) => banca.notaFinal != null).length,
         total: bancas.length,
       },
@@ -826,17 +826,17 @@ export default function RelatoriosPage() {
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="text-base font-bold text-slate-800">
-            Checklist operacional
+            Resumo de acompanhamento
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
               <tr>
-                <th className="px-6 py-3">Indicador</th>
-                <th className="px-6 py-3 text-center">Universo</th>
-                <th className="px-6 py-3 text-center">OK</th>
-                <th className="px-6 py-3 text-center">Atencao</th>
+                <th className="px-6 py-3">Categoria</th>
+                <th className="px-6 py-3 text-center">Total</th>
+                <th className="px-6 py-3 text-center">Em dia</th>
+                <th className="px-6 py-3 text-center">Pendências</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -856,9 +856,6 @@ export default function RelatoriosPage() {
                   </td>
                   <td className="px-6 py-4 text-center font-bold text-red-500">
                     {row.alert}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-
                   </td>
                 </tr>
               ))}
