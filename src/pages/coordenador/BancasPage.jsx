@@ -30,6 +30,33 @@ function errMessage(e, fallback) {
   return e?.message || fallback;
 }
 
+function bancaCreationErrorMessage(error) {
+  const message = errMessage(error, "Erro ao criar banca.");
+  const normalized = message
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (normalized.includes("aprovad")) {
+    return "Não é possível cadastrar uma banca para um TCC já aprovado.";
+  }
+
+  if (normalized.includes("reprovad")) {
+    return "Não é possível cadastrar uma banca para um TCC já reprovado.";
+  }
+
+  if (
+    normalized.includes("banca") &&
+    (normalized.includes("exist") ||
+      normalized.includes("cadastrad") ||
+      normalized.includes("duplic"))
+  ) {
+    return "Este TCC já possui uma banca cadastrada.";
+  }
+
+  return message;
+}
+
 function parseDate(value) {
   if (!value) return null;
   if (Array.isArray(value)) {
@@ -252,6 +279,35 @@ export default function BancasPage() {
       return;
     }
 
+    if (!editingBanca) {
+      const selectedTccId = Number(form.tccId);
+      const selectedTcc = tccs.find(
+        (tcc) => Number(tcc.id) === selectedTccId,
+      );
+      const existingBanca = bancas.some(
+        (banca) => Number(banca.tccId) === selectedTccId,
+      );
+
+      if (existingBanca) {
+        toast.error("Este TCC já possui uma banca cadastrada.");
+        return;
+      }
+
+      if (selectedTcc?.status === "APROVADO") {
+        toast.error(
+          "Não é possível cadastrar uma banca para um TCC já aprovado.",
+        );
+        return;
+      }
+
+      if (selectedTcc?.status === "REPROVADO") {
+        toast.error(
+          "Não é possível cadastrar uma banca para um TCC já reprovado.",
+        );
+        return;
+      }
+    }
+
     const notaFinal = form.notaFinal !== "" ? Number(form.notaFinal) : null;
     if (notaFinal != null && (Number.isNaN(notaFinal) || notaFinal < 0 || notaFinal > 10)) {
       toast.error("A nota final deve ficar entre 0 e 10.");
@@ -277,7 +333,11 @@ export default function BancasPage() {
       closeModal();
       await refresh();
     } catch (e) {
-      toast.error(errMessage(e, "Erro ao salvar banca."));
+      toast.error(
+        editingBanca
+          ? errMessage(e, "Erro ao salvar banca.")
+          : bancaCreationErrorMessage(e),
+      );
     } finally {
       setModalSaving(false);
     }
