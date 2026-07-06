@@ -8,6 +8,11 @@ export { ApiError };
 export const login = (email, senha) =>
   fetchClient("/auth/login", { method: "POST", body: { email, senha } });
 
+export const getAuthenticatedUser = () => fetchClient("/auth/me");
+
+export const logoutSession = () =>
+  fetchClient("/auth/logout", { method: "POST" });
+
 export const getUsuario = () => getStoredUser();
 
 export const registerUsuario = (data) =>

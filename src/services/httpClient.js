@@ -16,6 +16,10 @@ function isAuthEndpoint(url = "") {
   return (
     url === "/auth/login" ||
     url.startsWith("/auth/login?") ||
+    url === "/auth/me" ||
+    url.startsWith("/auth/me?") ||
+    url === "/auth/logout" ||
+    url.startsWith("/auth/logout?") ||
     url === "/auth/register" ||
     url.startsWith("/auth/register?")
   );
@@ -53,6 +57,7 @@ function extractErrorMessage(status, body) {
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
 });
 
 apiClient.interceptors.response.use(

@@ -1,7 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { login as apiLogin } from "../services/api";
+import {
+  getAuthenticatedUser,
+  login as apiLogin,
+  logoutSession,
+} from "../services/api";
 import { clearStoredUser, getStoredUser, storeUser } from "../lib/session";
 
 const AuthContext = createContext();
@@ -21,14 +25,32 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const storedUser = getStoredUser();
+    let active = true;
 
-    if (storedUser) {
-      setUser(storedUser);
-      setIsAuthenticated(true);
+    async function restoreSession() {
+      try {
+        const response = await getAuthenticatedUser();
+        if (!active) return;
+
+        const userData = normalizeUser(response);
+        storeUser(userData);
+        setUser(userData);
+        setIsAuthenticated(true);
+      } catch {
+        if (!active) return;
+        clearStoredUser();
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        if (active) setLoading(false);
+      }
     }
 
-    setLoading(false);
+    restoreSession();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const login = async (email, senha) => {
@@ -56,11 +78,15 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
-    clearStoredUser();
-    setUser(null);
-    setIsAuthenticated(false);
-    toast.success("Voce foi desconectado");
+  const logout = async () => {
+    try {
+      await logoutSession();
+    } finally {
+      clearStoredUser();
+      setUser(null);
+      setIsAuthenticated(false);
+      toast.success("Voce foi desconectado");
+    }
   };
 
   const updateUser = (updates) => {
