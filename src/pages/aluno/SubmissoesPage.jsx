@@ -17,10 +17,12 @@ import {
   downloadArquivo,
   getFeedbacksByTcc,
   getArquivosBySubmissao,
+  getBancaByTcc,
   getSubmissoesByTcc,
   getTccsByAluno,
   getUsuario,
 } from "../../services/api";
+import { getTccStatus } from "../../lib/tccStatus";
 
 const statusConfig = {
   ACEITO: {
@@ -110,10 +112,12 @@ export default function SubmissoesPage() {
       setTcc(escolhido);
 
       if (escolhido?.id) {
-        const [subs, feedbacks] = await Promise.all([
+        const [subs, feedbacks, banca] = await Promise.all([
           getSubmissoesByTcc(escolhido.id),
           getFeedbacksByTcc(escolhido.id),
+          getBancaByTcc(escolhido.id).catch(() => null),
         ]);
+        setTcc({ ...escolhido, status: getTccStatus(escolhido, banca) });
         const submissoesArray = Array.isArray(subs) ? subs : [];
         setSubmissoes(submissoesArray);
         const arquivosEntries = await Promise.all(

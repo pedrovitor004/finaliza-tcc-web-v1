@@ -17,35 +17,25 @@ import toast from "react-hot-toast";
 import {
   ApiError,
   getAllAlunos,
+  getAllBancas,
   getAllProfessores,
   getAllTccs,
   updateTcc,
 } from "../../services/api";
+import {
+  getBancaByTccId,
+  getTccStatus,
+  getTccStatusLabel,
+} from "../../lib/tccStatus";
 
 function errMessage(e, fallback) {
   if (e instanceof ApiError) return e.message;
   return e?.message || fallback;
 }
 
-function statusLabel(status) {
-  switch (status) {
-    case "EM_DESENVOLVIMENTO":
-      return "Em desenvolvimento";
-    case "EM_BANCA":
-      return "Em banca";
-    case "APROVADO":
-      return "Aprovado";
-    case "REPROVADO":
-      return "Reprovado";
-    case "ARQUIVADO":
-      return "Arquivado";
-    default:
-      return status ? String(status) : "-";
-  }
-}
-
 function uiStatusFromTcc(tcc) {
   if (!tcc) return { label: "Sem TCC", kind: "pendente" };
+  if (tcc.status === "EM_BANCA") return { label: "Em banca", kind: "banca" };
   if (tcc.status === "APROVADO") return { label: "Concluido", kind: "ok" };
   if (tcc.status === "REPROVADO") return { label: "Reprovado", kind: "bad" };
   if (tcc.status === "ARQUIVADO")
@@ -98,6 +88,7 @@ export default function AlunosPage() {
 
   const [alunos, setAlunos] = useState([]);
   const [tccs, setTccs] = useState([]);
+  const [bancas, setBancas] = useState([]);
   const [professores, setProfessores] = useState([]);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -108,14 +99,16 @@ export default function AlunosPage() {
   const [coorientadorId, setCoorientadorId] = useState("");
 
   async function refresh() {
-    const [a, t, p] = await Promise.all([
+    const [a, t, p, b] = await Promise.all([
       getAllAlunos(),
       getAllTccs(),
       getAllProfessores(),
+      getAllBancas(),
     ]);
     setAlunos(Array.isArray(a) ? a : []);
     setTccs(Array.isArray(t) ? t : []);
     setProfessores(Array.isArray(p) ? p : []);
+    setBancas(Array.isArray(b) ? b : []);
   }
 
   useEffect(() => {
@@ -174,10 +167,12 @@ export default function AlunosPage() {
   const rows = useMemo(() => {
     return alunos.map((aluno) => {
       const tcc = tccByAlunoId.get(aluno.id);
+      const status = getTccStatus(tcc, getBancaByTccId(bancas, tcc?.id));
+      const tccComStatus = tcc ? { ...tcc, status } : null;
       const orientador = tcc?.orientadorNome || null;
       const tema = tcc?.titulo || "Ainda nao definido";
-      const fase = tcc ? statusLabel(tcc.status) : "Inicial";
-      const ui = uiStatusFromTcc(tcc);
+      const fase = tcc ? getTccStatusLabel(status) : "Inicial";
+      const ui = uiStatusFromTcc(tccComStatus);
 
       return {
         id: aluno.id,
@@ -188,10 +183,10 @@ export default function AlunosPage() {
         tema,
         fase,
         uiStatus: ui,
-        tcc: tcc || null,
+        tcc: tccComStatus,
       };
     });
-  }, [alunos, tccByAlunoId]);
+  }, [alunos, bancas, tccByAlunoId]);
 
   const alunosFiltrados = useMemo(() => {
     const termo = busca.toLowerCase().trim();
@@ -210,6 +205,8 @@ export default function AlunosPage() {
         (filtroStatus === "Atrasado" && aluno.uiStatus.kind === "bad") ||
         (filtroStatus === "Pendente" &&
           aluno.uiStatus.kind === "pendente") ||
+        (filtroStatus === "Em Banca" &&
+          aluno.uiStatus.kind === "banca") ||
         (filtroStatus === "Concluido" &&
           aluno.uiStatus.label === "Concluido");
 
@@ -242,6 +239,13 @@ export default function AlunosPage() {
       return (
         <span className="inline-flex items-center rounded-full bg-[#ffe9b0] px-2 py-0.5 text-[11px] font-semibold text-[#9a5b00]">
           <Clock size={12} className="mr-1" /> Pendente
+        </span>
+      );
+    }
+    if (ui.kind === "banca") {
+      return (
+        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+          <Clock size={12} className="mr-1" /> Em banca
         </span>
       );
     }
@@ -477,6 +481,7 @@ export default function AlunosPage() {
               >
                 <option value="Todos">Todos os Status</option>
                 <option value="Em Dia">Em andamento</option>
+                <option value="Em Banca">Em banca</option>
                 <option value="Atrasado">Reprovado</option>
                 <option value="Pendente">Pendente</option>
                 <option value="Concluido">Concluido</option>

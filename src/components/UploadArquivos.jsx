@@ -11,6 +11,7 @@ import {
 import { createSubmissao, deleteSubmissao, uploadArquivoFile } from "../services/api";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const editableTccStatus = "EM_DESENVOLVIMENTO";
 
 function isPdf(file) {
   return file?.type === "application/pdf" || file?.name?.toLowerCase().endsWith(".pdf");
@@ -27,7 +28,8 @@ export default function UploadArquivos({
   const [enviando, setEnviando] = useState(false);
   const fileInputRef = useRef(null);
 
-  const blocked = disabled || !tcc?.id || enviando;
+  const statusBloqueado = tcc?.id && tcc.status !== editableTccStatus;
+  const blocked = disabled || !tcc?.id || enviando || statusBloqueado;
 
   const selecionarArquivo = (file) => {
     if (!file) return;
@@ -124,6 +126,13 @@ export default function UploadArquivos({
         <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           <AlertCircle size={18} className="mt-0.5 shrink-0" />
           <span>Cadastre seu TCC antes de enviar uma submissao.</span>
+        </div>
+      )}
+
+      {statusBloqueado && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <span>Este TCC ja saiu da etapa de desenvolvimento.</span>
         </div>
       )}
 

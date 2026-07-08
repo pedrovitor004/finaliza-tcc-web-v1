@@ -11,11 +11,17 @@ import {
 import toast from "react-hot-toast";
 import {
     getAllTccs,
+    getAllBancas,
     getSubmissoesByTcc,
     getArquivosBySubmissao,
     getArquivoDownloadUrl,
     ApiError,
 } from "../../services/api";
+import {
+  getBancaByTccId,
+  getTccStatus,
+  getTccStatusLabel,
+} from "../../lib/tccStatus";
 
 function errMessage(e, fallback) {
   if (e instanceof ApiError) return e.message;
@@ -63,6 +69,7 @@ export default function TCCsPage() {
   const [busca, setBusca] = useState("");
   const [filtroFase, setFiltroFase] = useState("Todas");
   const [tccs, setTccs] = useState([]);
+  const [bancas, setBancas] = useState([]);
   const [tccDetalhe, setTccDetalhe] = useState(null);
 
   useEffect(() => {
@@ -71,9 +78,10 @@ export default function TCCsPage() {
     async function load() {
       try {
         setLoading(true);
-        const t = await getAllTccs();
+        const [t, b] = await Promise.all([getAllTccs(), getAllBancas()]);
         if (!alive) return;
         setTccs(Array.isArray(t) ? t : []);
+        setBancas(Array.isArray(b) ? b : []);
       } catch (e) {
         toast.error(errMessage(e, "Erro ao carregar TCCs."));
       } finally {
@@ -131,23 +139,25 @@ export default function TCCsPage() {
 
   const rows = useMemo(() => {
     return tccs.map((t) => {
-      const fase = statusLabel(t.status);
+      const status = getTccStatus(t, getBancaByTccId(bancas, t.id));
+      const fase = getTccStatusLabel(status) || statusLabel(status);
       const ultima =
         parseMaybeLocalDate(t.dataFim) || parseMaybeLocalDate(t.dataInicio);
 
       let uiStatus = "No Prazo";
-      if (t.status === "REPROVADO") uiStatus = "Reprovado";
-      else if (t.status === "EM_BANCA") uiStatus = "Em banca";
+      if (status === "REPROVADO") uiStatus = "Reprovado";
+      else if (status === "APROVADO") uiStatus = "Aprovado";
+      else if (status === "EM_BANCA") uiStatus = "Em banca";
       else if (!t.orientadorId) uiStatus = "PendÃªncias";
 
       const progresso =
-        t.status === "APROVADO"
+        status === "APROVADO"
           ? 100
-          : t.status === "REPROVADO"
+          : status === "REPROVADO"
             ? 35
-            : t.status === "EM_BANCA"
+            : status === "EM_BANCA"
               ? 85
-              : t.status === "ARQUIVADO"
+              : status === "ARQUIVADO"
                 ? 10
                 : 60;
 
@@ -163,7 +173,7 @@ export default function TCCsPage() {
         raw: t,
       };
     });
-  }, [tccs]);
+  }, [bancas, tccs]);
 
   const tccsFiltrados = rows.filter((tcc) => {
     const termo = busca.toLowerCase();
@@ -233,7 +243,7 @@ export default function TCCsPage() {
                 <div className="flex items-center gap-2">
                   <span
                     className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${
-                      tcc.status === "No Prazo"
+                      tcc.status === "No Prazo" || tcc.status === "Aprovado"
                         ? "bg-green-100 text-green-700"
                         : tcc.status === "Reprovado"
                           ? "bg-red-100 text-red-700"

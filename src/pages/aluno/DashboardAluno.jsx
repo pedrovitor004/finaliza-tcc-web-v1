@@ -16,7 +16,9 @@ import {
   getUsuario,
   getTccsByAluno,
   getFeedbacksByTcc,
+  getBancaByTcc,
 } from "../../services/api";
+import { getTccStatus } from "../../lib/tccStatus";
 
 const statusConfig = {
   EM_DESENVOLVIMENTO: { label: "Em Desenvolvimento", cor: "yellow" },
@@ -78,8 +80,11 @@ export default function DashboardAluno() {
         const chosen = pickPrimaryTcc(tccs || []);
 
         if (chosen) {
-          setTcc(chosen);
-          const fb = await getFeedbacksByTcc(chosen.id);
+          const [fb, banca] = await Promise.all([
+            getFeedbacksByTcc(chosen.id),
+            getBancaByTcc(chosen.id).catch(() => null),
+          ]);
+          setTcc({ ...chosen, status: getTccStatus(chosen, banca) });
           setFeedbacks(Array.isArray(fb) ? fb : []);
         } else {
           setTcc(null);
@@ -182,8 +187,9 @@ export default function DashboardAluno() {
               <button
                 type="button"
                 onClick={() => navigate("/aluno/submissoes")}
+                disabled={tcc.status !== "EM_DESENVOLVIMENTO"}
                 className="px-5 py-2.5 text-white font-medium rounded-lg shadow-sm transition-all flex items-center justify-center hover:brightness-90 active:scale-95"
-                style={{ backgroundColor: "#359830" }}
+                style={{ backgroundColor: tcc.status === "EM_DESENVOLVIMENTO" ? "#359830" : "#94a3b8" }}
               >
                 <UploadCloud size={18} className="mr-2" />
                 Nova Versão

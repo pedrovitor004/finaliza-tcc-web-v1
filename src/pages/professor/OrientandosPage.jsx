@@ -9,7 +9,8 @@ import {
   User,
   X,
 } from "lucide-react";
-import { getTccsByProfessor, getUsuario } from "../../services/api.js";
+import { getAllBancas, getTccsByProfessor, getUsuario } from "../../services/api.js";
+import { getBancaByTccId, getTccStatus } from "../../lib/tccStatus";
 
 const STATUS_LABELS = {
   EM_DESENVOLVIMENTO: "Em Andamento",
@@ -45,8 +46,11 @@ export default function OrientandosPage() {
     if (!usuarioId) return;
 
     getTccsByProfessor(usuarioId)
-      .then((tccs) => {
-        const mapped = (Array.isArray(tccs) ? tccs : []).map((tcc) => ({
+      .then(async (tccs) => {
+        const bancas = await getAllBancas().catch(() => []);
+        const mapped = (Array.isArray(tccs) ? tccs : []).map((tcc) => {
+          const status = getTccStatus(tcc, getBancaByTccId(bancas, tcc.id));
+          return {
           id: tcc.id,
           nome: tcc.alunoNome || "Aluno",
           email: tcc.alunoEmail || "",
@@ -56,14 +60,15 @@ export default function OrientandosPage() {
           areaNome: tcc.areaNome,
           orientadorNome: tcc.orientadorNome,
           coorientadorNome: tcc.coorientadorNome,
-          status: STATUS_LABELS[tcc.status] || tcc.status,
-          statusRaw: tcc.status,
+          status: STATUS_LABELS[status] || status,
+          statusRaw: status,
           dataInicio: formatDate(tcc.dataInicio),
           prazo:
-            tcc.status === "APROVADO"
+            status === "APROVADO"
               ? "Concluido"
               : formatDate(tcc.dataFim),
-        }));
+          };
+        });
         setOrientandos(mapped);
       })
       .catch(() => setErro("Erro ao carregar orientandos."))

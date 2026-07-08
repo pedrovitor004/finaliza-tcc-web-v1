@@ -18,7 +18,9 @@ import {
   getAllAreas,
   createTcc,
   ApiError,
+  getBancaByTcc,
 } from "../../services/api";
+import { getTccStatus } from "../../lib/tccStatus";
 
 const statusConfig = {
   EM_DESENVOLVIMENTO: { label: "Em Desenvolvimento", cor: "yellow" },
@@ -134,7 +136,10 @@ export default function MeuTccPage() {
   const loadTcc = useCallback(async () => {
     if (!usuario?.id) return null;
     const tccs = await getTccsByAluno(usuario.id);
-    return pickPrimaryTcc(tccs || []);
+    const escolhido = pickPrimaryTcc(tccs || []);
+    if (!escolhido?.id) return escolhido;
+    const banca = await getBancaByTcc(escolhido.id).catch(() => null);
+    return { ...escolhido, status: getTccStatus(escolhido, banca) };
   }, [usuario?.id]);
 
   const bootstrap = useCallback(async () => {

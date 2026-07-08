@@ -11,7 +11,8 @@ import {
 } from "lucide-react";
 import CardStats from "../../components/shared/CardStats.jsx";
 import TableTCC from "../../components/shared/TableTCC.jsx";
-import { getUsuario, getTccsByProfessor, getSubmissoesByTcc } from "../../services/api.js";
+import { getAllBancas, getUsuario, getTccsByProfessor, getSubmissoesByTcc } from "../../services/api.js";
+import { getBancaByTccId, getTccStatus } from "../../lib/tccStatus";
 
 export default function DashboardProfessor() {
   const usuario = getUsuario();
@@ -25,11 +26,18 @@ export default function DashboardProfessor() {
 
     getTccsByProfessor(usuario.id)
       .then(async (data) => {
-        setTccs(data);
+        const bancas = await getAllBancas().catch(() => []);
+        const tccsComStatus = (Array.isArray(data) ? data : []).map((tcc) => ({
+          ...tcc,
+          status: getTccStatus(tcc, getBancaByTccId(bancas, tcc.id)),
+        }));
+        setTccs(tccsComStatus);
 
-        // Contar submissões pendentes (ENVIADO ou EM_ANALISE) em todos os TCCs
+        // Conta pendencias apenas dos TCCs ainda em desenvolvimento.
         const counts = await Promise.all(
-          data.map((tcc) =>
+          tccsComStatus
+            .filter((tcc) => tcc.status === "EM_DESENVOLVIMENTO")
+            .map((tcc) =>
             getSubmissoesByTcc(tcc.id)
               .then((subs) =>
                 subs.filter((s) => s.status === "ENVIADO" || s.status === "EM_ANALISE").length
@@ -61,7 +69,7 @@ export default function DashboardProfessor() {
     status: statusLabel(tcc.status),
   }));
 
-  const ativos = tccs.filter((t) => t.status === "EM_DESENVOLVIMENTO" || t.status === "EM_BANCA").length;
+  const ativos = tccs.filter((t) => t.status === "EM_DESENVOLVIMENTO").length;
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">

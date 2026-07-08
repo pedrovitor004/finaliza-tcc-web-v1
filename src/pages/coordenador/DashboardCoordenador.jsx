@@ -19,6 +19,7 @@ import {
   getAllBancas,
   ApiError,
 } from "../../services/api";
+import { getBancaByTccId, getTccStatus } from "../../lib/tccStatus";
 import { useNavigate } from "react-router-dom";
 
 function errMessage(e, fallback) {
@@ -106,9 +107,18 @@ export default function DashboardCoordenador() {
     };
   }, []);
 
+  const tccsComStatus = useMemo(
+    () =>
+      tccs.map((tcc) => ({
+        ...tcc,
+        status: getTccStatus(tcc, getBancaByTccId(bancas, tcc.id)),
+      })),
+    [bancas, tccs],
+  );
+
   const estatisticas = useMemo(() => {
     const professoresAtivos = professores.filter((p) => !!p?.id).length;
-    const tccsEmAndamento = tccs.filter(
+    const tccsEmAndamento = tccsComStatus.filter(
       (t) => t?.status !== "ARQUIVADO",
     ).length;
 
@@ -127,7 +137,7 @@ export default function DashboardCoordenador() {
       tccsEmAndamento,
       bancasAgendadas: bancasProx30,
     };
-  }, [alunos, professores, tccs, bancas]);
+  }, [alunos, professores, tccsComStatus, bancas]);
 
   const statusTCCs = useMemo(() => {
     const counts = {
@@ -139,13 +149,13 @@ export default function DashboardCoordenador() {
       OUTROS: 0,
     };
 
-    for (const t of tccs) {
+    for (const t of tccsComStatus) {
       const s = t?.status;
       if (s && Object.prototype.hasOwnProperty.call(counts, s)) counts[s] += 1;
       else counts.OUTROS += 1;
     }
 
-    const total = tccs.length || 1;
+    const total = tccsComStatus.length || 1;
 
     const rows = [
       {
@@ -179,13 +189,13 @@ export default function DashboardCoordenador() {
       ...r,
       porcentagem: `${Math.round((r.valor / total) * 100)}%`,
     }));
-  }, [tccs]);
+  }, [tccsComStatus]);
 
   const alertasAdministrativos = useMemo(() => {
-    const alunoComTcc = new Set(tccs.map((t) => t.alunoId).filter(Boolean));
+    const alunoComTcc = new Set(tccsComStatus.map((t) => t.alunoId).filter(Boolean));
     const semTcc = alunos.filter((a) => a?.id && !alunoComTcc.has(a.id)).length;
 
-    const semOrientador = tccs.filter((t) => !t?.orientadorId).length;
+    const semOrientador = tccsComStatus.filter((t) => !t?.orientadorId).length;
 
     const avaliadoresMinimo = 2; // regra “de UI” (ajuste se seu domínio for outro)
     const bancasSemAvaliadores = bancas.filter((b) => {
@@ -239,11 +249,11 @@ export default function DashboardCoordenador() {
     }
 
     return alertas;
-  }, [alunos, tccs, bancas, navigate]);
+  }, [alunos, tccsComStatus, bancas, navigate]);
 
   const atividadesRecentes = useMemo(() => {
     // “Atividade recente” derivada dos TCCs (melhor que mock)
-    const items = tccs
+    const items = tccsComStatus
       .map((t) => ({
         id: t.id,
         usuario: `${t.titulo || "Sem título"} (${t.alunoNome || "Aluno"})`,
@@ -254,7 +264,7 @@ export default function DashboardCoordenador() {
       .slice(0, 6);
 
     return items;
-  }, [tccs]);
+  }, [tccsComStatus]);
 
   if (loading) {
     return (
