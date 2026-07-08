@@ -19,6 +19,7 @@ import {
   getAllBancas,
   getAllTccs,
 } from "../../services/api";
+import { getBancaByTccId, getTccStatus } from "../../lib/tccStatus";
 
 const chartGreen = "#2f8f2b";
 const chartGreenDark = "#23731f";
@@ -138,6 +139,17 @@ function renderRows(rows, columns) {
     .join("");
 }
 
+function tccRank(tcc) {
+  const ranks = {
+    APROVADO: 5,
+    REPROVADO: 5,
+    EM_BANCA: 4,
+    EM_DESENVOLVIMENTO: 3,
+    ARQUIVADO: 1,
+  };
+  return ranks[tcc?.status] || 2;
+}
+
 export default function RelatoriosPage() {
   const [loading, setLoading] = useState(true);
   const [alunos, setAlunos] = useState([]);
@@ -175,12 +187,44 @@ export default function RelatoriosPage() {
     };
   }, []);
 
+  const tccsComStatus = useMemo(
+    () =>
+      tccs.map((tcc) => ({
+        ...tcc,
+        status: getTccStatus(tcc, getBancaByTccId(bancas, tcc.id)),
+      })),
+    [bancas, tccs],
+  );
+
+  const tccsAtuais = useMemo(() => {
+    const byAluno = new Map();
+    const semAluno = [];
+
+    for (const tcc of tccsComStatus) {
+      if (!tcc?.alunoId) {
+        semAluno.push(tcc);
+        continue;
+      }
+
+      const atual = byAluno.get(tcc.alunoId);
+      if (
+        !atual ||
+        tccRank(tcc) > tccRank(atual) ||
+        (tccRank(tcc) === tccRank(atual) && Number(tcc.id) > Number(atual.id))
+      ) {
+        byAluno.set(tcc.alunoId, tcc);
+      }
+    }
+
+    return [...byAluno.values(), ...semAluno];
+  }, [tccsComStatus]);
+
   const metrics = useMemo(() => {
-    const totalTccs = tccs.length;
-    const aprovados = tccs.filter((tcc) => tcc.status === "APROVADO").length;
-    const reprovados = tccs.filter((tcc) => tcc.status === "REPROVADO").length;
-    const emAndamento = tccs.filter(
-      (tcc) => tcc.status === "EM_DESENVOLVIMENTO" || tcc.status === "EM_BANCA",
+    const totalTccs = tccsAtuais.length;
+    const aprovados = tccsAtuais.filter((tcc) => tcc.status === "APROVADO").length;
+    const reprovados = tccsAtuais.filter((tcc) => tcc.status === "REPROVADO").length;
+    const emAndamento = tccsAtuais.filter(
+      (tcc) => tcc.status === "EM_DESENVOLVIMENTO",
     ).length;
     const taxa = totalTccs ? Math.round((aprovados / totalTccs) * 100) : 0;
 
@@ -191,7 +235,7 @@ export default function RelatoriosPage() {
       taxa,
       totalTccs,
     };
-  }, [tccs]);
+  }, [tccsAtuais]);
 
   const statusChart = useMemo(() => {
     const order = [
@@ -204,7 +248,7 @@ export default function RelatoriosPage() {
     ];
     const counts = new Map(order.map((status) => [status, 0]));
 
-    for (const tcc of tccs) {
+    for (const tcc of tccsAtuais) {
       const key = tcc.status || "SEM_STATUS";
       counts.set(key, (counts.get(key) || 0) + 1);
     }
@@ -220,13 +264,13 @@ export default function RelatoriosPage() {
       labels: items.map((item) => item.label),
       series: items.map((item) => item.total),
     };
-  }, [tccs]);
+  }, [tccsAtuais]);
 
   const porArea = useMemo(() => {
     const map = new Map();
     map.set("Sem area", 0);
 
-    for (const tcc of tccs) {
+    for (const tcc of tccsAtuais) {
       const nome = tcc.areaNome || "Sem area";
       map.set(nome, (map.get(nome) || 0) + 1);
     }
@@ -241,7 +285,7 @@ export default function RelatoriosPage() {
       .filter((item) => item.qtd > 0)
       .sort((a, b) => b.qtd - a.qtd)
       .slice(0, 8);
-  }, [areas, tccs]);
+  }, [areas, tccsAtuais]);
 
   const bancasPorMes = useMemo(() => {
     const map = new Map();
@@ -262,23 +306,23 @@ export default function RelatoriosPage() {
   }, [bancas]);
 
   const docRows = useMemo(() => {
-    const comOrientador = tccs.filter((tcc) => !!tcc.orientadorId).length;
-    const semOrientador = tccs.filter((tcc) => !tcc.orientadorId).length;
+    const comOrientador = tccsAtuais.filter((tcc) => !!tcc.orientadorId).length;
+    const semOrientador = tccsAtuais.filter((tcc) => !tcc.orientadorId).length;
 
     return [
       {
         alert: semOrientador,
         doc: "Orientação dos TCCs",
         ok: comOrientador,
-        total: tccs.length,
+        total: tccsAtuais.length,
       },
       {
-        alert: tccs.filter((tcc) => tcc.status === "REPROVADO").length,
+        alert: tccsAtuais.filter((tcc) => tcc.status === "REPROVADO").length,
         doc: "Andamento dos TCCs",
-        ok: tccs.filter(
+        ok: tccsAtuais.filter(
           (tcc) => tcc.status === "EM_BANCA" || tcc.status === "APROVADO",
         ).length,
-        total: tccs.length,
+        total: tccsAtuais.length,
       },
       {
         alert: bancas.filter((banca) => banca.notaFinal == null).length,
@@ -287,11 +331,11 @@ export default function RelatoriosPage() {
         total: bancas.length,
       },
     ];
-  }, [tccs, bancas]);
+  }, [tccsAtuais, bancas]);
 
   function openPdfWindow(reportName) {
     const tccByAlunoId = new Map();
-    for (const tcc of tccs) {
+    for (const tcc of tccsAtuais) {
       if (tcc?.alunoId && !tccByAlunoId.has(tcc.alunoId)) {
         tccByAlunoId.set(tcc.alunoId, tcc);
       }
@@ -333,7 +377,7 @@ export default function RelatoriosPage() {
           { label: "Inicio", value: (row) => formatDate(row.dataInicio) },
           { label: "Fim", value: (row) => formatDate(row.dataFim) },
         ],
-        rows: tccs,
+        rows: tccsAtuais,
       },
       "Cronograma de Bancas (snapshot)": {
         title: "Cronograma de Bancas",

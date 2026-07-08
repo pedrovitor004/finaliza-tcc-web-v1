@@ -161,7 +161,7 @@ export default function BancasPage() {
         return {
           ...banca,
           date,
-          realizada: date ? date < now : false,
+          realizada: banca.notaFinal != null || (date ? date < now : false),
           dia: date ? String(date.getDate()).padStart(2, "0") : "-",
           mes: date
             ? date

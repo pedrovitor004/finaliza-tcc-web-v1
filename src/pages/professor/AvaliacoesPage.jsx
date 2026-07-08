@@ -11,6 +11,7 @@ import {
 import toast from "react-hot-toast";
 import {
   createFeedback,
+  getAllBancas,
   getSubmissoesByTcc,
   getTccsByProfessor,
   getUsuario,
@@ -19,6 +20,7 @@ import {
   getArquivoDownloadUrl,
   getArquivoVisualizarUrl,
 } from "../../services/api.js";
+import { getBancaByTccId, getTccStatus } from "../../lib/tccStatus";
 
 const STATUS_PENDENTE = ["ENVIADO", "EM_ANALISE"];
 const STATUS_CONCLUIDO = ["ACEITO", "NECESSITA_CORRECAO"];
@@ -58,20 +60,27 @@ export default function AvaliacoesPage() {
 
     getTccsByProfessor(usuario.id)
       .then(async (tccs) => {
+        const bancas = await getAllBancas().catch(() => []);
         const todas = await Promise.all(
-          (Array.isArray(tccs) ? tccs : []).map((tcc) =>
+          (Array.isArray(tccs) ? tccs : []).map((tcc) => {
+            const podeCorrigir =
+              getTccStatus(tcc, getBancaByTccId(bancas, tcc.id)) ===
+              "EM_DESENVOLVIMENTO";
+            return (
             getSubmissoesByTcc(tcc.id)
               .then((subs) =>
                 (Array.isArray(subs) ? subs : []).map((submissao) => ({
                   ...submissao,
+                  podeCorrigir,
                   alunoNome: tcc.alunoNome || "Aluno",
                   tccTitulo: tcc.titulo,
                   tccId: tcc.id,
                   tcc,
                 })),
               )
-              .catch(() => []),
-          ),
+              .catch(() => [])
+            );
+          }),
         );
 
         setSubmissoes(
@@ -94,12 +103,12 @@ export default function AvaliacoesPage() {
 
   const submissoesFiltradas = submissoes.filter((submissao) =>
     abaAtiva === "pendentes"
-      ? STATUS_PENDENTE.includes(submissao.status)
+      ? submissao.podeCorrigir && STATUS_PENDENTE.includes(submissao.status)
       : STATUS_CONCLUIDO.includes(submissao.status),
   );
 
   const pendentesCount = submissoes.filter((submissao) =>
-    STATUS_PENDENTE.includes(submissao.status),
+    submissao.podeCorrigir && STATUS_PENDENTE.includes(submissao.status),
   ).length;
 
 const abrirModal = async (submissao) => {
