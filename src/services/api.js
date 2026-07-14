@@ -1,5 +1,4 @@
 import fetchClient, { ApiError, apiClient } from "./httpClient";
-import { API_BASE_URL } from "../config/api";
 import { getStoredUser } from "../lib/session";
 
 export { ApiError };
@@ -123,11 +122,33 @@ export const uploadArquivoFile = (file, submissaoId, tipo = "MANUSCRITO") => {
   return fetchClient("/arquivos/upload", { method: "POST", body: formData });
 };
 
-export const getArquivoVisualizarUrl = (id) =>
-  `${API_BASE_URL}/arquivos/${id}/visualizar`;
+function filenameFromDisposition(disposition) {
+  const utf8Match = disposition?.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match) return decodeURIComponent(utf8Match[1]);
 
-export const getArquivoDownloadUrl = (id) =>
-  `${API_BASE_URL}/arquivos/${id}/download`;
+  return disposition?.match(/filename="?([^";]+)"?/i)?.[1] || null;
+}
+
+export const openArquivo = async (id) => {
+  const response = await apiClient.get(`/arquivos/${id}/visualizar`, {
+    responseType: "blob",
+  });
+  const url = URL.createObjectURL(response.data);
+  window.open(url, "_blank", "noopener,noreferrer");
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+};
+
+export const saveArquivo = async (id) => {
+  const { blob, filename } = await downloadArquivo(id);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename || `arquivo-${id}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
 export const downloadArquivo = async (id) => {
   const response = await apiClient.get(
     `/arquivos/${id}/download`,
@@ -138,7 +159,7 @@ export const downloadArquivo = async (id) => {
 
   return {
     blob: response.data,
-    filename: null,
+    filename: filenameFromDisposition(response.headers["content-disposition"]),
   };
 };
 

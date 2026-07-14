@@ -14,7 +14,7 @@ import {
     getAllBancas,
     getSubmissoesByTcc,
     getArquivosBySubmissao,
-    getArquivoDownloadUrl,
+    openArquivo,
     ApiError,
 } from "../../services/api";
 import {
@@ -123,10 +123,7 @@ export default function TCCsPage() {
 
       const arquivoMaisRecente = arquivos[0];
 
-      window.open(
-        getArquivoDownloadUrl(arquivoMaisRecente.id),
-        "_blank"
-      );
+      await openArquivo(arquivoMaisRecente.id);
     } catch (e) {
       toast.error(
         errMessage(

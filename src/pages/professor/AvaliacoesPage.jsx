@@ -17,8 +17,8 @@ import {
   getUsuario,
   updateSubmissao,
   getArquivosBySubmissao,
-  getArquivoDownloadUrl,
-  getArquivoVisualizarUrl,
+  openArquivo,
+  saveArquivo,
 } from "../../services/api.js";
 import { getBancaByTccId, getTccStatus } from "../../lib/tccStatus";
 
@@ -372,21 +372,21 @@ const abrirModal = async (submissao) => {
                         </div>
 
                         <div className="flex gap-2">
-                          <a
-                            href={getArquivoVisualizarUrl(arquivo.id)}
-                            target="_blank"
-                            rel="noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => openArquivo(arquivo.id).catch(() => toast.error("Nao foi possivel abrir o arquivo."))}
                             className="rounded-lg bg-[#359830] px-3 py-2 text-sm !text-white transition-colors hover:bg-[#2a7725]"
                           >
                             Visualizar
-                          </a>
+                          </button>
 
-                          <a
-                            href={getArquivoDownloadUrl(arquivo.id)}
+                          <button
+                            type="button"
+                            onClick={() => saveArquivo(arquivo.id).catch(() => toast.error("Nao foi possivel baixar o arquivo."))}
                             className="rounded-lg border border-[#359830] bg-white px-3 py-2 text-sm font-medium text-[#2a7725] transition-colors hover:bg-green-50"
                           >
                             Download
-                          </a>
+                          </button>
                         </div>
                       </div>
                     ))}
