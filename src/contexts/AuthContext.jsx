@@ -6,7 +6,12 @@ import {
   login as apiLogin,
   logoutSession,
 } from "../services/api";
-import { clearStoredUser, getStoredUser, storeUser } from "../lib/session";
+import {
+  clearStoredUser,
+  getStoredToken,
+  storeToken,
+  storeUser,
+} from "../lib/session";
 
 const AuthContext = createContext();
 
@@ -28,6 +33,11 @@ export function AuthProvider({ children }) {
     let active = true;
 
     async function restoreSession() {
+      if (!getStoredToken()) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await getAuthenticatedUser();
         if (!active) return;
@@ -58,6 +68,7 @@ export function AuthProvider({ children }) {
 
     try {
       const response = await apiLogin(email, senha);
+      storeToken(response.token);
       const userData = normalizeUser(response);
 
       storeUser(userData);

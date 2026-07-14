@@ -1,6 +1,6 @@
 import axios from "axios";
 import { API_BASE_URL } from "../config/api";
-import { clearStoredUser } from "../lib/session";
+import { clearStoredUser, getStoredToken } from "../lib/session";
 
 export class ApiError extends Error {
   constructor(message, { status, body, url } = {}) {
@@ -57,7 +57,16 @@ function extractErrorMessage(status, body) {
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = getStoredToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
 apiClient.interceptors.response.use(

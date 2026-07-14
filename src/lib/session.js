@@ -1,9 +1,8 @@
 const USER_KEY = "@FinalizaTCC:user";
-const LEGACY_TOKEN_KEY = "@FinalizaTCC:token";
+const TOKEN_KEY = "@FinalizaTCC:token";
 
 export function getStoredUser() {
   try {
-    localStorage.removeItem(LEGACY_TOKEN_KEY);
     const storedUser = localStorage.getItem(USER_KEY);
     return storedUser ? JSON.parse(storedUser) : null;
   } catch (error) {
@@ -14,11 +13,19 @@ export function getStoredUser() {
 }
 
 export function storeUser(user) {
-  localStorage.removeItem(LEGACY_TOKEN_KEY);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
+export function getStoredToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function storeToken(token) {
+  if (!token) throw new Error("Token de autenticacao ausente");
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
 export function clearStoredUser() {
-  localStorage.removeItem(LEGACY_TOKEN_KEY);
+  localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 }
