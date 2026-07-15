@@ -75,7 +75,11 @@ apiClient.interceptors.response.use(
     const status = error.response?.status;
     const url = error.config?.url || "";
 
-    if ((status === 401 || status === 403) && !isAuthEndpoint(url)) {
+    // 401 means that the JWT is absent, invalid or expired. A 403 only means
+    // that the authenticated user cannot perform that operation, so clearing
+    // a perfectly valid session here would turn an authorization error into
+    // an unexpected logout.
+    if (status === 401 && !isAuthEndpoint(url)) {
       clearStoredUser();
       window.location.href = "/login";
       return Promise.reject(

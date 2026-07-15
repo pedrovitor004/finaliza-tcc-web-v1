@@ -25,9 +25,9 @@ import TCCsPage from "./pages/coordenador/TCCsPage";
 import BancasPageCoord from "./pages/coordenador/BancasPage";
 import RelatoriosPage from "./pages/coordenador/RelatoriosPage";
 import AreasPage from "./pages/coordenador/AreasPage";
+import CoordenadoresPage from "./pages/coordenador/CoordenadoresPage";
 
 import { ModuleRegistry } from 'ag-grid-community';
-import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule } from "ag-grid-community";
 
 // Registra os módulos globalmente para o projeto inteiro
@@ -51,6 +51,7 @@ function HomeRedirect({ user }) {
 
 function AppRoutes() {
   const { isAuthenticated, loading, user } = useAuth();
+  const hasRole = (role) => (user?.roles || [user?.tipo]).includes(role);
 
   if (loading) return <LoadingScreen />;
 
@@ -80,7 +81,7 @@ function AppRoutes() {
           </>
         )}
 
-        {user?.tipo === "PROFESSOR" && (
+        {hasRole("PROFESSOR") && (
           <>
             <Route path="/professor/dashboard" element={<DashboardProfessor />} />
             <Route path="/professor/orientandos" element={<OrientandosPage />} />
@@ -90,7 +91,7 @@ function AppRoutes() {
           </>
         )}
 
-        {user?.tipo === "COORDENADOR" && (
+        {hasRole("COORDENADOR") && (
           <>
             <Route path="/coordenador/dashboard" element={<DashboardCoordenador />} />
             <Route path="/coordenador/alunos" element={<AlunosPage />} />
@@ -99,6 +100,8 @@ function AppRoutes() {
             <Route path="/coordenador/bancas" element={<BancasPageCoord />} />
             <Route path="/coordenador/relatorios" element={<RelatoriosPage />} />
             <Route path="/coordenador/areas" element={<AreasPage />} />
+            <Route path="/coordenador/coordenadores" element={<CoordenadoresPage />} />
+            <Route path="/coordenador/coordenadores/novo" element={<CoordenadoresPage />} />
           </>
         )}
 

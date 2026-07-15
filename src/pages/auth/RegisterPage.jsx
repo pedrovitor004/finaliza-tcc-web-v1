@@ -28,7 +28,6 @@ const initialForm = {
   periodo: "",
   areaAtuacao: "",
   titulacao: "",
-  coordenador: false,
 };
 
 const inputClass =
@@ -72,8 +71,8 @@ export default function RegisterPage() {
       return false;
     }
 
-    if (formData.senha.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres.");
+    if (formData.senha.length < 8) {
+      toast.error("A senha deve ter pelo menos 8 caracteres.");
       return false;
     }
 
@@ -111,8 +110,6 @@ export default function RegisterPage() {
           senha: formData.senha,
           areaAtuacao: formData.areaAtuacao,
           titulacao: formData.titulacao,
-          coordenador: formData.coordenador,
-          tipo: formData.coordenador ? "COORDENADOR" : "PROFESSOR",
         });
       }
 
@@ -282,10 +279,6 @@ export default function RegisterPage() {
                             setFormData((current) => ({
                               ...current,
                               tipo: value,
-                              coordenador:
-                                value === "PROFESSOR"
-                                  ? current.coordenador
-                                  : false,
                             }))
                           }
                           className={`flex h-11 items-center justify-center gap-2 rounded-lg border text-sm font-semibold transition ${
@@ -378,26 +371,6 @@ export default function RegisterPage() {
                       </select>
                     </Field>
 
-                    <label className="flex items-start gap-3 rounded-lg border border-white/25 bg-white/10 px-4 py-3 sm:col-span-2">
-                      <input
-                        name="coordenador"
-                        type="checkbox"
-                        checked={formData.coordenador}
-                        onChange={handleChange}
-                        disabled={loading}
-                        className="mt-1 h-4 w-4 rounded border-slate-300 text-[#359830] focus:ring-[#359830]"
-                      />
-                      <span className="min-w-0">
-                        <span className="flex items-center gap-2 text-sm font-semibold text-white">
-                          <ShieldCheck size={16} className="text-white" />
-                          Professor coordenador
-                        </span>
-                        <span className="mt-1 block text-xs leading-5 text-white/72">
-                          Marque esta opcao para criar a conta com acesso de
-                          coordenador.
-                        </span>
-                      </span>
-                    </label>
                   </div>
                 )}
 
@@ -409,7 +382,8 @@ export default function RegisterPage() {
                       required
                       value={formData.senha}
                       onChange={handleChange}
-                      placeholder="Minimo 6 caracteres"
+                      placeholder="Minimo 8 caracteres"
+                      minLength={8}
                       className={inputClass}
                       disabled={loading}
                     />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   BookOpen,
@@ -14,6 +14,8 @@ import {
   UploadCloud,
   UserCircle,
   Users,
+  ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import finalizaTccLogo from "../assets/Group (1).png";
@@ -45,10 +47,29 @@ const menus = {
     },
     { titulo: "Alunos", icone: Users, path: "/coordenador/alunos" },
     { titulo: "Professores", icone: Users, path: "/coordenador/professores" },
+    {
+      titulo: "Coordenacao",
+      icone: ShieldCheck,
+      children: [
+        { titulo: "Listar coordenadores", path: "/coordenador/coordenadores" },
+        { titulo: "Cadastrar coordenador", path: "/coordenador/coordenadores/novo" },
+      ],
+    },
     { titulo: "Gerenciar TCCs", icone: BookOpen, path: "/coordenador/tccs" },
     { titulo: "Bancas", icone: Calendar, path: "/coordenador/bancas" },
     { titulo: "Relatorios", icone: FileText, path: "/coordenador/relatorios" },
     { titulo: "Areas", icone: Settings, path: "/coordenador/areas" },
+    {
+      titulo: "Area do Professor",
+      icone: BookOpen,
+      children: [
+        { titulo: "Dashboard docente", path: "/professor/dashboard" },
+        { titulo: "Meus orientandos", path: "/professor/orientandos" },
+        { titulo: "Avaliar submissoes", path: "/professor/avaliacoes" },
+        { titulo: "Minhas bancas", path: "/professor/bancas" },
+        { titulo: "Perfil docente", path: "/professor/perfil" },
+      ],
+    },
   ],
 };
 
@@ -117,6 +138,22 @@ function Sidebar({
         </p>
         {menu.map((item) => {
           const Icon = item.icone;
+          if (item.children) {
+            const childActive = item.children.some((child) => child.path === currentPath);
+            return (
+              <details key={item.titulo} open={childActive} className="group">
+                <summary className={`flex h-10 cursor-pointer list-none items-center rounded-lg text-sm font-semibold transition ${childActive ? "bg-white text-[#1f661c] shadow-sm" : "text-slate-600 hover:bg-white"} ${collapsed ? "justify-center" : "gap-3 px-3"}`}>
+                  <Icon size={19} className="shrink-0 text-slate-400" />
+                  {!collapsed && <><span className="flex-1 truncate">{item.titulo}</span><ChevronDown size={15} className="transition group-open:rotate-180" /></>}
+                </summary>
+                {!collapsed && <div className="ml-5 mt-1 space-y-1 border-l border-slate-200 pl-3">
+                  {item.children.map((child) => (
+                    <Link key={child.path} to={child.path} onClick={onNavigate} className={`block rounded-lg px-3 py-2 text-xs font-semibold ${currentPath === child.path ? "bg-white text-[#1f661c] shadow-sm" : "text-slate-500 hover:bg-white hover:text-slate-800"}`}>{child.titulo}</Link>
+                  ))}
+                </div>}
+              </details>
+            );
+          }
           const active = currentPath === item.path;
 
           return (
@@ -193,7 +230,8 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
 
   const menu = menus[user?.tipo] || [];
-  const currentPage = menu.find((item) => item.path === location.pathname);
+  const currentPage = menu.flatMap((item) => item.children || [item])
+    .find((item) => item.path === location.pathname);
 
   const handleLogout = () => {
     logout();

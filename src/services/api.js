@@ -21,58 +21,129 @@ export const updateUsuario = (id, data) =>
   fetchClient(`/usuarios/${id}`, { method: "PUT", body: data });
 
 // Alunos
-export const getAluno = (id) => fetchClient(`/alunos/${id}`);
+export const getAluno = (id) =>
+  getStoredUser()?.tipo === "ALUNO"
+    ? getMeuPerfilAluno()
+    : fetchClient(`/alunos/${id}`);
+export const getMeuPerfilAluno = () => fetchClient("/alunos/me");
 export const createAluno = (data) =>
   fetchClient("/alunos/create", { method: "POST", body: data });
 export const registerAluno = createAluno;
 export const getAllAlunos = () => fetchClient("/alunos");
 export const updateAluno = (id, data) =>
-  fetchClient(`/alunos/${id}`, { method: "PUT", body: data });
+  getStoredUser()?.tipo === "ALUNO"
+    ? updateMeuPerfilAluno(data)
+    : fetchClient(`/alunos/${id}`, { method: "PUT", body: data });
+export const updateMeuPerfilAluno = (data) =>
+  fetchClient("/alunos/me", { method: "PUT", body: data });
 export const deleteAluno = (id) =>
   fetchClient(`/alunos/${id}`, { method: "DELETE" });
 
 // Professores
-export const getProfessor = (id) => fetchClient(`/professores/${id}`);
-export const getAllProfessores = () => fetchClient("/professores");
+export const getProfessor = (id) =>
+  getStoredUser()?.tipo === "PROFESSOR"
+    ? getMeuPerfilProfessor()
+    : fetchClient(`/professores/${id}`);
+export const getMeuPerfilProfessor = () => fetchClient("/professores/me");
+export const getAllProfessores = () =>
+  getStoredUser()?.tipo === "ALUNO"
+    ? fetchClient("/professores/orientadores")
+    : fetchClient("/professores");
 export const createProfessor = (data) =>
   fetchClient("/professores/create", { method: "POST", body: data });
-export const registerProfessor = createProfessor;
+export const registerProfessor = (data) =>
+  fetchClient("/professores/register", { method: "POST", body: data });
 export const updateProfessor = (id, data) =>
-  fetchClient(`/professores/${id}`, { method: "PUT", body: data });
+  getStoredUser()?.tipo === "PROFESSOR"
+    ? updateMeuPerfilProfessor(data)
+    : fetchClient(`/professores/${id}`, { method: "PUT", body: data });
+export const updateMeuPerfilProfessor = (data) =>
+  fetchClient("/professores/me", { method: "PUT", body: data });
 export const deleteProfessor = (id) =>
   fetchClient(`/professores/${id}`, { method: "DELETE" });
+
+// Coordenadores (professores com papel adicional de coordenacao)
+export const getAllCoordenadores = () => fetchClient("/coordenadores");
+export const createCoordenador = (data) =>
+  fetchClient("/coordenadores", { method: "POST", body: data });
+export const promoverProfessorCoordenador = (professorId) =>
+  fetchClient(`/coordenadores/professores/${professorId}/promover`, {
+    method: "PATCH",
+  });
 
 // TCCs
 export const getAllTccs = () => fetchClient("/tccs");
 export const getTcc = (id) => fetchClient(`/tccs/${id}`);
+export const getMeuTcc = () => fetchClient("/tccs/me");
 export const createTcc = (data) =>
   fetchClient("/tccs/create", { method: "POST", body: data });
-export const getTccsByAluno = (alunoId) =>
-  fetchClient(`/tccs/aluno/${alunoId}`);
+export const getTccsByAluno = async (alunoId) => {
+  if (getStoredUser()?.tipo !== "ALUNO") {
+    return fetchClient(`/tccs/aluno/${alunoId}`);
+  }
+
+  const tcc = await getMeuTcc();
+  return tcc ? [tcc] : [];
+};
 export const getTccsByProfessor = (professorId) =>
-  fetchClient(`/tccs/professor/${professorId}`);
+  getStoredUser()?.tipo === "PROFESSOR"
+    ? fetchClient("/tccs/professor/me")
+    : fetchClient(`/tccs/professor/${professorId}`);
 export const updateTcc = (id, data) =>
   fetchClient(`/tccs/${id}`, { method: "PUT", body: data });
+export const updateMeuTcc = (data) =>
+  fetchClient("/tccs/me", { method: "PUT", body: data });
 export const deleteTcc = (id) =>
   fetchClient(`/tccs/${id}`, { method: "DELETE" });
 
 // Submissoes
-export const getSubmissoesByTcc = (tccId) =>
-  fetchClient(`/submissoes/tcc/${tccId}`);
+export const getSubmissoesByTcc = (tccId) => {
+  const tipo = getStoredUser()?.tipo;
+  if (tipo === "ALUNO") return getMinhasSubmissoes();
+  if (tipo === "PROFESSOR") return getSubmissoesDoProfessor();
+  return fetchClient(`/submissoes/tcc/${tccId}`);
+};
+export const getMinhasSubmissoes = () => fetchClient("/submissoes/me");
+export const getSubmissoesDoProfessor = () =>
+  fetchClient("/submissoes/professor");
 export const createSubmissao = (data) =>
   fetchClient("/submissoes/create", { method: "POST", body: data });
 export const updateSubmissao = (id, data) =>
-  fetchClient(`/submissoes/${id}`, { method: "PUT", body: data });
+  getStoredUser()?.tipo === "PROFESSOR"
+    ? fetchClient(`/submissoes/${id}/status`, {
+        method: "PATCH",
+        body: { status: data.status },
+      })
+    : fetchClient(`/submissoes/${id}`, { method: "PUT", body: data });
 export const deleteSubmissao = (id) =>
   fetchClient(`/submissoes/${id}`, { method: "DELETE" });
 
 // Bancas
-export const getAllBancas = () => fetchClient("/bancas");
+export const getAllBancas = () => {
+  const tipo = getStoredUser()?.tipo;
+  if (tipo === "ALUNO") return fetchClient("/bancas/me");
+  if (tipo === "PROFESSOR") return fetchClient("/bancas/professor/me");
+  return fetchClient("/bancas");
+};
 export const createBanca = (data) =>
   fetchClient("/bancas/create", { method: "POST", body: data });
-export const getBancaByTcc = (tccId) => fetchClient(`/bancas/tcc/${tccId}`);
+export const getBancaByTcc = async (tccId) => {
+  const tipo = getStoredUser()?.tipo;
+  if (tipo === "ALUNO" || tipo === "PROFESSOR") {
+    const bancas = await getAllBancas();
+    return (Array.isArray(bancas) ? bancas : []).find(
+      (banca) => Number(banca.tccId) === Number(tccId),
+    ) || null;
+  }
+  return fetchClient(`/bancas/tcc/${tccId}`);
+};
 export const updateBanca = (id, data) =>
-  fetchClient(`/bancas/${id}`, { method: "PUT", body: data });
+  getStoredUser()?.tipo === "PROFESSOR"
+    ? fetchClient(`/bancas/${id}/nota-final`, {
+        method: "PATCH",
+        body: { notaFinal: data.notaFinal },
+      })
+    : fetchClient(`/bancas/${id}`, { method: "PUT", body: data });
 export const deleteBanca = (id) =>
   fetchClient(`/bancas/${id}`, { method: "DELETE" });
 
@@ -80,14 +151,21 @@ export const deleteBanca = (id) =>
 export const getFeedbacksBySubmissao = (id) =>
   fetchClient(`/feedbacks/submissao/${id}`);
 export const getFeedbacksByTcc = (tccId) =>
-  fetchClient(`/feedbacks/tcc/${tccId}`);
+  getStoredUser()?.tipo === "ALUNO"
+    ? fetchClient("/feedbacks/me")
+    : fetchClient(`/feedbacks/tcc/${tccId}`);
 export const createFeedback = (data) =>
   fetchClient("/feedbacks/create", { method: "POST", body: data });
 export const updateFeedback = (id, data) =>
   fetchClient(`/feedbacks/${id}`, { method: "PUT", body: data });
 export const deleteFeedback = (id) =>
   fetchClient(`/feedbacks/${id}`, { method: "DELETE" });
-export const getAllAvaliacoes = () => fetchClient("/avaliacoes");
+export const getAllAvaliacoes = () => {
+  const tipo = getStoredUser()?.tipo;
+  if (tipo === "ALUNO") return fetchClient("/avaliacoes/me");
+  if (tipo === "PROFESSOR") return fetchClient("/avaliacoes/professor/me");
+  return fetchClient("/avaliacoes");
+};
 export const createAvaliacao = (data) =>
   fetchClient("/avaliacoes/create", { method: "POST", body: data });
 export const updateAvaliacao = (id, data) =>
@@ -106,7 +184,11 @@ export const deleteArea = (id) =>
   fetchClient(`/areas-pesquisa/${id}`, { method: "DELETE" });
 
 // Arquivos
-export const getArquivos = () => fetchClient("/arquivos");
+export const getArquivos = () =>
+  getStoredUser()?.tipo === "ALUNO"
+    ? getMeusArquivos()
+    : fetchClient("/arquivos");
+export const getMeusArquivos = () => fetchClient("/arquivos/me");
 export const getArquivosBySubmissao = (submissaoId) =>
   fetchClient(`/arquivos/submissao/${submissaoId}`);
 export const createArquivo = (data) =>

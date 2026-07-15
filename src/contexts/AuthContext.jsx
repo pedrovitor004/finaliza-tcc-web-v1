@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
   getAuthenticatedUser,
@@ -21,6 +21,9 @@ function normalizeUser(response) {
     nome: response.nome,
     email: response.email,
     tipo: response.tipo,
+    roles: Array.isArray(response.roles) && response.roles.length
+      ? response.roles
+      : [response.tipo].filter(Boolean),
   };
 }
 
@@ -83,7 +86,7 @@ export function AuthProvider({ children }) {
       setIsAuthenticated(false);
       setUser(null);
 
-      throw new Error(errorMessage);
+      throw new Error(errorMessage, { cause: error });
     } finally {
       setLoading(false);
     }
